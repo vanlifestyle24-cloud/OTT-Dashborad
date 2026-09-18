@@ -1,6 +1,0 @@
-{
-  "name": "CINEFLIX OTT Admin Dashboard",
-  "description": "High-production Dark Mode OTT Admin Dashboard for CINEFLIX streaming platform to manage movies, web series, Telegram streaming links, and global app settings.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
