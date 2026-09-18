@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { ContentItem, CategoryType, GenreType, QualityBadge } from '../types';
 import { MASTER_CONFIG, SAMPLE_WORKING_STREAM } from '../data/initialData';
+import { fetchMovieFromOmdb } from '../services/omdbService';
 
 interface AddContentFormProps {
   onPublish: (content: ContentItem) => Promise<void>;
@@ -167,6 +168,44 @@ export const AddContentForm: React.FC<AddContentFormProps> = ({
     onTriggerToast('info', 'Autofilled Template', `Populated ${presetName.toUpperCase()} sample metadata`);
   };
 
+  const [isOmdbLoading, setIsOmdbLoading] = useState(false);
+  const [omdbSource, setOmdbSource] = useState<'localStorage' | 'supabase-cloud' | 'omdb-live' | null>(null);
+
+  const handleOmdbSearch = async () => {
+    if (!title.trim()) {
+      onTriggerToast('warning', 'Enter Title', 'Please enter a movie title first to search OMDb');
+      return;
+    }
+    setIsOmdbLoading(true);
+    setOmdbSource(null);
+    try {
+      const response = await fetchMovieFromOmdb(title);
+      if (response && response.result) {
+        const { result, source } = response;
+        setOmdbSource(source);
+        setTitle(result.title);
+        setTagline(result.tagline);
+        setReleaseYear(result.releaseYear);
+        setDuration(result.duration);
+        setImdbRating(result.imdbRating);
+        setMatchScore(result.matchScore);
+        if (result.posterUrl) {
+          setPosterUrl(result.posterUrl);
+          setBackdropUrl(result.backdropUrl || result.posterUrl);
+        }
+        if (result.genre) {
+          setGenre(result.genre as any);
+        }
+        const sourceLabel = source === 'supabase-cloud' ? 'Supabase Cloud Cache' : source === 'localStorage' ? 'Local Storage Cache' : 'OMDb Live API';
+        onTriggerToast('success', 'OMDb Metadata Fetched', `Successfully loaded "${result.title}" via ${sourceLabel}!`);
+      }
+    } catch (err: any) {
+      onTriggerToast('error', 'OMDb Error', err.message || 'Could not fetch from OMDb');
+    } finally {
+      setIsOmdbLoading(false);
+    }
+  };
+
   // Validate form
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -285,9 +324,40 @@ export const AddContentForm: React.FC<AddContentFormProps> = ({
               {/* Title & Tagline */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Content Title <span className="text-[#E50914]">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Content Title <span className="text-[#E50914]">*</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {omdbSource && (
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                          omdbSource === 'supabase-cloud' || omdbSource === 'localStorage'
+                            ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+                            : 'bg-[#00E5FF]/20 border border-[#00E5FF]/40 text-[#00E5FF]'
+                        }`}>
+                          {omdbSource === 'supabase-cloud' || omdbSource === 'localStorage' ? '⚡ Cloud Cache Hit' : '🌐 OMDb Live API'}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleOmdbSearch}
+                        disabled={isOmdbLoading}
+                        className="px-2.5 py-1 rounded-lg bg-[#00E5FF]/15 hover:bg-[#00E5FF]/25 border border-[#00E5FF]/40 text-[#00E5FF] text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isOmdbLoading ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            <span>Fetching OMDb...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3" />
+                            <span>Auto-Fetch from OMDb API</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                   <input
                     id="input-title"
                     type="text"
