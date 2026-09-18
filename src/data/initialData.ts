@@ -1,8 +1,8 @@
 import { ContentItem, AppSettings } from '../types';
 
 export const MASTER_CONFIG = {
-  BACKEND_URL: 'https://cineflix-proxy.vercel.app',
-  MASTER_API_KEY: 'cineflix_live_master_98f4a21e7d0b3c65e8a11974ef',
+  BACKEND_URL: (import.meta.env.VITE_BACKEND_URL as string) || 'https://cineflix-proxy.vercel.app',
+  MASTER_API_KEY: (import.meta.env.VITE_MASTER_API_KEY as string) || 'cineflix_live_master_98f4a21e7d0b3c65e8a11974ef',
 };
 
 export const INITIAL_SETTINGS: AppSettings = {
